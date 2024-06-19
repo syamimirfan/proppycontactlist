@@ -55,7 +55,7 @@ router.route('/list').get(async(req,res) => {
 
 //UPDATE
 //Update List Contact
-router.route('/update/:id').put(async (req, res) => {
+router.route('/update/:id').patch(async (req, res) => {
     const { id } = req.params;
     const { name, phone_number, email } = req.body;
 
