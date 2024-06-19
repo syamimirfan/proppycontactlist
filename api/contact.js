@@ -62,22 +62,14 @@ router.route('/update/:id').patch(async (req, res) => {
     try {
         const request = new db.Request();
 
+        // Query to fetch the existing contact
         const existingContactQuery = `
             SELECT *
             FROM Contacts
             WHERE id = @id;
         `;
-        
-        const updateQuery = `
-            UPDATE Contacts
-            SET 
-                name = ISNULL(@name, name),
-                phone_number = ISNULL(@phone_number, phone_number),
-                email = ISNULL(@email, email)
-            WHERE id = @id;
-        `;
 
-        // Check if the contact exists
+        // Fetch the existing contact
         const existingContactResult = await request
             .input('id', db.NVarChar, id)
             .query(existingContactQuery);
@@ -86,12 +78,24 @@ router.route('/update/:id').patch(async (req, res) => {
             return res.status(404).send({ error: "Contact not found" });
         }
 
-        // Update the contact
+        const existingContact = existingContactResult.recordset[0];
+
+        // Prepare the update query
+        const updateQuery = `
+            UPDATE Contacts
+            SET 
+                name = @name,
+                phone_number = @phone_number,
+                email = @email
+            WHERE id = @id;
+        `;
+
+        // Update the contact with either the provided values or the existing values
         const updateRequest = new db.Request()
-            .input('id', db.NVarChar, id) // Ensure @id is provided here
-            .input('name', db.NVarChar, name)
-            .input('phone_number', db.NVarChar, phone_number)
-            .input('email', db.NVarChar, email);
+            .input('id', db.NVarChar, id)
+            .input('name', db.NVarChar, name || existingContact.name)
+            .input('phone_number', db.NVarChar, phone_number || existingContact.phone_number)
+            .input('email', db.NVarChar, email || existingContact.email);
 
         await updateRequest.query(updateQuery);
 
